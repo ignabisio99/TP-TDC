@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Simulación Horno Eléctrico</title>
+    <link rel="stylesheet" href="TDC.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <div class="main-container">
+
+    <div class="slider-container">
+      <label for="slider">Temperatura deseada (°C): 50 a 250</label><br>
+      <input type="range" id="slider" min="50" max="250" step="5" value="180">
+      <span id="sliderValue">180</span> °C
+    </div>
+
+    <div class="checkbox-container">
+      <label for="myCheckbox">Puerta abierta (perturbación):</label>
+      <input type="checkbox" id="myCheckbox">
+      <span id="perturbacion">Perturbación: no</span>
+    </div>
+
+    <div class="charts-grid">
+
+      <div class="chart-box">
+        <h3>Potencia aplicada (%)</h3>
+        <canvas id="ChartSalida"></canvas>
+      </div>
+
+      <div class="chart-box">
+        <h3>Temperatura (°C)</h3>
+        <canvas id="ChartMedicion"></canvas>
+      </div>
+
+      <div class="chart-box chart-single">
+        <h3>Error (°C)</h3>
+        <canvas id="ChartError"></canvas>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script src="TDC.js"></script>
+</body>
+</html>
