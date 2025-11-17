@@ -31,12 +31,17 @@ let setpoint = 180;            // referencia (°C) - controlable con slider
 let temperatura = 25;          // temperatura inicial ambiente (°C)
 let tiempoMin = 0;             // tiempo simulado en minutos
 
-// Control
-const Kp = 0.9;                // ganancia proporcional (ajustable)
+// --- CONTROL PI (Proporcional-Integral) ---
+const Kp = 0.9;                // Ganancia proporcional (velocidad de reacción)
+const Ki = 0.2;                // Ganancia integral (elimina error estacionario)
+let integralError = 0;         // Acumulador del error para la parte Integral
+const maxIntegral = 100 / Ki;  // Límite Anti-Windup (evita que la integral crezca indefinidamente)
+const minIntegral = -100 / Ki;
 
 // Modelo térmico (parámetros calibrables)
-const maxHeatingRate = 15.0;   // °C por minuto a potencia 100% (aumenta si querés más rapidez)
-const lossCoeff = 0.03;        // coeficiente de pérdidas (proporcional a temp-ambiente)
+// (Estos valores están hardcodeados en tu 'modeloTermico', pero los dejo aquí)
+const maxHeatingRate = 20.0;   // °C por minuto a potencia 100%
+const lossCoeff = 0.10;        // coeficiente de pérdidas (proporcional a temp-ambiente)
 const ambient = 25;            // temperatura ambiente (°C)
 
 // Pérdida por puerta abierta (perturbación)
@@ -57,6 +62,8 @@ let caidaInicialAplicada = false;
 slider.addEventListener('input', () => {
     setpoint = parseInt(slider.value, 10);
     sliderValue.textContent = setpoint;
+    // Reseteamos la integral si cambia el setpoint para que reaccione rápido
+    integralError = 0; 
 });
 
 perturbacionCheck.addEventListener('change', () => {
@@ -69,36 +76,66 @@ perturbacionCheck.addEventListener('change', () => {
     perturbacionTxt.innerText = "Perturbación: " + (puertaAbierta ? "sí" : "no");
 });
 
-// Función de control proporcional (devuelve potencia 0..100)
-function controlProporcional(error) {
-    let p = Kp * error;
-    if (p < 0) p = 0;
-    if (p > 100) p = 100;
-    return p;
+// *** NUEVO: Función de control Proporcional-Integral (PI) ***
+function controlPI(error) {
+    // 1. Parte Proporcional (igual que antes)
+    const p = Kp * error;
+
+    // 2. Parte Integral (la novedad)
+    // Acumula el error en cada "minuto"
+    integralError += error;
+    
+    // "Anti-Windup": Evita que el término integral crezca demasiado
+    // Si la potencia está al 100%, no seguimos acumulando
+    if (integralError > maxIntegral) integralError = maxIntegral;
+    if (integralError < minIntegral) integralError = minIntegral;
+    
+    const i = Ki * integralError;
+
+    // 3. Salida total (P + I)
+    let salida = p + i;
+    
+    // Saturación: la potencia no puede ser < 0% o > 100%
+    if (salida < 0) salida = 0;
+    if (salida > 100) salida = 100;
+    
+    return salida;
 }
 
-// Modelo térmico por minuto
-// potencia: 0..100 (%)
-function modeloTermico(temp, potencia) {
-    const ambiente = 25;
+// *** CORREGIDO: Modelo térmico por minuto ***
+// (Ahora acepta 'puertaAbierta' y usa la pérdida continua)
+function modeloTermico(temp, potencia, puertaAbierta) {
+    // calor entregado por las resistencias
+    const heating = (potencia / 100) * maxHeatingRate; // (Uso maxHeatingRate)
 
-    // calor entregado por las resistencias (potencia máxima ~20°C/min)
-    const heating = (potencia / 100) * 20;
+    // pérdidas térmicas normales (aislación)
+    const cooling = lossCoeff * (temp - ambient); // (Uso lossCoeff y ambient)
 
-    // pérdidas térmicas realistas
-    const cooling = 0.10 * (temp - ambiente);
+    // *** NUEVO: Pérdida por puerta abierta ***
+    let doorLoss = 0;
+    if (puertaAbierta) {
+        if (!caidaInicialAplicada) {
+            // Aplicamos caída brusca 1 SOLA VEZ
+            temp -= doorInitialDrop; 
+            caidaInicialAplicada = true;
+            console.log(`>> Puerta abierta: caída inicial ${-doorInitialDrop} °C -> temp=${temp.toFixed(2)}`);
+        }
+        // Aplicamos la pérdida continua CADA MINUTO que sigue abierta
+        doorLoss = doorLossPerMin; 
+    }
 
-    return temp + heating - cooling;
+    return temp + heating - cooling - doorLoss;
 }
 
 
-// Inicio: log para debugging (como querías en la consola)
-console.log("Simulación iniciada");
+// Inicio: log para debugging
+console.log("Simulación iniciada (con control PI)");
 console.log("Setpoint inicial =", setpoint + " °C");
-console.log("Parámetros: maxHeatingRate=", maxHeatingRate, "°C/min, lossCoeff=", lossCoeff, ", doorLoss/min=", doorLossPerMin);
+console.log(`Parámetros PI: Kp=${Kp}, Ki=${Ki}`);
+console.log(`Parámetros Horno: TasaCalor=${maxHeatingRate}°C/min, CoefPérdida=${lossCoeff}`);
 
 // ---------- Bucle de simulación: 1 iteración = 1 minuto simulado ----------
-const SIM_INTERVAL_MS = 1000; // cada 1000 ms representamos 1 minuto simulado (ajustable)
+const SIM_INTERVAL_MS = 1000; // cada 1000 ms representamos 1 minuto simulado
 
 setInterval(() => {
     console.log("--------------------------------------------------");
@@ -108,30 +145,22 @@ setInterval(() => {
     const medicion = temperatura;
     console.log(`t=${tiempoMin} min - Medición = ${medicion.toFixed(2)} °C`);
 
-    // perturbación: apertura de puerta
-    if (puertaAbierta) {
-        if (!caidaInicialAplicada) {
-            temperatura -= doorInitialDrop;
-            caidaInicialAplicada = true;
-            console.log(`>> Puerta abierta: caída inicial ${-doorInitialDrop} °C -> temp=${temperatura.toFixed(2)}`);
-        } else {
-            console.log(">> Puerta abierta: pérdida continua activa.");
-        }
-    }
-
     // cálculo de error
     const error = setpoint - medicion;
-    console.log("Error =", error.toFixed(2), "°C");
+    console.log(`Setpoint=${setpoint}, Error = ${error.toFixed(2)} °C`);
 
-    // controlador (P)
-    const salidaControl = controlProporcional(error); // 0..100 (%)
-    console.log("Control P (potencia %) =", salidaControl.toFixed(2));
+    // *** CAMBIO: Usamos el controlador PI ***
+    const salidaControl = controlPI(error); // 0..100 (%)
+    console.log(`Control PI (potencia %) = ${salidaControl.toFixed(2)} (i_acum: ${integralError.toFixed(1)})`);
 
-    // modelo térmico: actualizamos temperatura considerando la potencia y si la puerta está abierta
+    // *** CAMBIO: modelo térmico actualizado ***
+    // (La lógica de la puerta abierta ahora está DENTRO del modelo)
     temperatura = modeloTermico(temperatura, salidaControl, puertaAbierta);
     console.log("Temperatura después del modelo =", temperatura.toFixed(2), "°C");
 
     // actualizar gráficos (ejes X en minutos)
+    // (Esta lógica es idéntica y estaba bien)
+    
     // salida (potencia)
     salidaChart.data.labels.push(tiempoMin);
     salidaChart.data.datasets[0].data.push(salidaControl);
