@@ -11,15 +11,14 @@
 
   <div class="main-container">
 
-    <h2>Simulación Horno Eléctrico (Control PI)</h2>
+    <h2>Simulación Horno Eléctrico</h2>
 
     <!-- Panel de controles principales -->
     <div class="panel controls-layout">
 
-      <!-- ==================== IZQUIERDA ==================== -->
+      <!-- IZQUIERDA -->
       <div class="controls-left">
 
-        <!-- Slider de temperatura objetivo dentro del recuadro gris -->
         <div class="slider-container">
           <label for="slider">Temperatura objetivo (°C) (entre 50 y 250):</label><br>
           <input type="range" id="slider" min="50" max="250" step="5" value="180">
@@ -65,7 +64,7 @@
 
       </div>
 
-      <!-- ==================== DERECHA ==================== -->
+      <!-- DERECHA -->
       <div class="controls-right">
 
         <div class="row">
@@ -87,32 +86,38 @@
 
     <!-- Panel de gráficos -->
     <div class="panel">
+      <div class="charts-grid">
 
-      <div class="chart-box">
-        <h3>Temperatura Objetivo (°C)</h3>
-        <canvas id="ChartDeseada"></canvas>
+        <!-- Fila 1 -->
+        <div class="chart-box big-chart">
+          <h3>Temperatura Objetivo (°C)</h3>
+          <canvas id="ChartDeseada"></canvas>
+        </div>        
+
+        <div class="chart-box big-chart">
+          <h3>Temperatura Medida (°C)</h3>
+          <canvas id="ChartMedicion"></canvas>
+        </div>
+
+        <!-- Fila 2 -->
+        <div class="chart-box">
+          <h3>Error (°C)</h3>
+          <canvas id="ChartError"></canvas>
+        </div>
+
+        <div class="chart-box">
+          <h3>Potencia (W)</h3>
+          <canvas id="ChartSalida"></canvas>
+        </div>
+
+        <!-- Fila 3 -->
+        <div class="chart-box">
+          <h3>Perturbación (0/1)</h3>
+          <canvas id="ChartPerturbacion"></canvas>
+        </div>
+
+        <!-- La celda de la derecha de la fila 3 queda vacía -->
       </div>
-
-      <div class="chart-box big-chart">
-        <h3>Temperatura Medida (°C)</h3>
-        <canvas id="ChartMedicion"></canvas>
-      </div>
-
-      <div class="chart-box">
-        <h3>Error (°C)</h3>
-        <canvas id="ChartError"></canvas>
-      </div>
-
-      <div class="chart-box">
-        <h3>Potencia (W)</h3>
-        <canvas id="ChartSalida"></canvas>
-      </div>
-
-      <div class="chart-box">
-        <h3>Perturbación (0/1)</h3>
-        <canvas id="ChartPerturbacion"></canvas>
-      </div>
-
     </div>
 
   </div>

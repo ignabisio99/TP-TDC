@@ -118,9 +118,16 @@ h3 {
   font-size: 0.9em;
 }
 
-/* Gráficos */
+/* Grilla de gráficos */
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+/* Cada gráfico */
 .chart-box {
-  margin-bottom: 25px;
+  margin-bottom: 0; /* el gap de la grilla ya separa */
 }
 
 canvas {
@@ -150,5 +157,10 @@ canvas {
 
   .row label {
     width: 160px;
+  }
+
+  /* En pantallas chicas, los gráficos pasan a una sola columna */
+  .charts-grid {
+    grid-template-columns: 1fr;
   }
 }
