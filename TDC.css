@@ -1,48 +1,154 @@
+/* Fondo general y contenedor */
 body {
   font-family: Arial, sans-serif;
-  background: #eef2f3;
+  background: white;
   margin: 0;
   padding: 0;
   display: flex;
   justify-content: center;
-  padding-top: 30px;
+  padding-top: 20px;
 }
 
 .main-container {
   width: 90%;
-  max-width: 1000px;
-  background: white;
+  max-width: 1100px;
+  background: #ffffff;
   padding: 25px;
-  border-radius: 15px;
-  box-shadow: 0px 4px 15px rgba(0,0,0,0.1);
+  border-radius: 12px;
+  border: 1px solid #ccc;
 }
 
-.slider-container, .checkbox-container {
+/* Títulos */
+h2 {
+  text-align: center;
+  margin-top: 0;
   margin-bottom: 20px;
+}
+
+h3 {
   text-align: center;
+  margin-top: 0;
+  margin-bottom: 10px;
 }
 
-.charts-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 25px;
-  margin-top: 30px;
+/* Slider de temperatura dentro del panel */
+.slider-container {
+  margin-bottom: 15px;
+  text-align: left;
 }
 
-.chart-single {
-  grid-column: span 2;
+#slider {
+  width: 100%;
+  max-width: 400px;
 }
 
-.chart-box h3 {
-  text-align: center;
-  margin-bottom: 5px;
+/* Paneles */
+.panel {
+  border: 1px solid #ccc;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  background: #fafafa;
+}
+
+/* Layout de controles izquierda/derecha */
+.controls-layout {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 40px;
+}
+
+.controls-left,
+.controls-right {
+  width: 48%;
+}
+
+/* Filas de controles */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.row label {
+  width: 200px;
+}
+
+.row input[type="number"] {
+  width: 90px;
+}
+
+/* Botones */
+.btn {
+  padding: 6px 15px;
+  border-radius: 5px;
+  border: 1px solid #999;
+  background: #eee;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: #ddd;
+}
+
+.btn-primary {
+  background: #cce5ff;
+  border-color: #4a88d8;
+}
+
+.btn-primary:hover {
+  background: #bbdcff;
+}
+
+.btn-danger {
+  background: #f5cfcf;
+  border-color: #bb4b4b;
+}
+
+.btn-danger:hover {
+  background: #e8b5b5;
+}
+
+/* Texto auxiliar */
+.muted {
+  color: #666;
+  font-size: 0.9em;
+}
+
+/* Gráficos */
+.chart-box {
+  margin-bottom: 25px;
 }
 
 canvas {
   width: 100% !important;
-  height: 350px !important;
+  height: 260px !important;
   background: #fff;
-  border-radius: 10px;
-  padding: 10px;
-  box-shadow: 0px 2px 10px rgba(0,0,0,0.1);
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  box-sizing: border-box;
+}
+
+/* Hacer más grande el gráfico de temperatura medida */
+.big-chart canvas {
+  height: 380px !important;
+}
+
+/* Responsive básico */
+@media (max-width: 800px) {
+  .controls-layout {
+    flex-direction: column;
+  }
+
+  .controls-left,
+  .controls-right {
+    width: 100%;
+  }
+
+  .row label {
+    width: 160px;
+  }
 }
