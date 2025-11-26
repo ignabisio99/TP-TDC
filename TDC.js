@@ -1,4 +1,4 @@
-// TDC.js - Simulación horno eléctrico
+// TDC.js - Simulación horno eléctrico (Control PI, potencia deseada en %)
 
 // ===================== CHARTS =====================
 const ctxDeseada      = document.getElementById('ChartDeseada').getContext('2d');
@@ -14,7 +14,6 @@ const bandaErrorPlugin = {
     const { ctx, chartArea, scales } = chart;
     const setpoint = options.setpoint;
     const banda = options.bandaError;
-
     if (setpoint == null) return;
 
     const yTop = scales.y.getPixelForValue(setpoint + banda);
@@ -48,29 +47,26 @@ function createChart(ctx, labelY, yMin, yMax) {
     options: {
       animation: false,
       responsive: true,
-
       interaction: {
         mode: 'nearest',
         intersect: false
       },
-
       elements: {
         point: {
           radius: 0
         }
       },
-
       plugins: {
         legend: { display: false },
         tooltip: {
           enabled: true,
           callbacks: {
-            title: function (items) {
+            title(items) {
               if (!items.length) return '';
               const x = items[0].parsed.x;
               return `Tiempo: ${x.toFixed(1)} min`;
             },
-            label: function (context) {
+            label(context) {
               const label = context.dataset.label || '';
               const y = context.parsed.y;
               return `${label}: ${y.toFixed(2)}`;
@@ -78,7 +74,6 @@ function createChart(ctx, labelY, yMin, yMax) {
           }
         }
       },
-
       scales: {
         x: {
           type: 'linear',
@@ -96,17 +91,14 @@ function createChart(ctx, labelY, yMin, yMax) {
   });
 }
 
-// ===== Config de potencia para el gráfico =====
-const maxPowerW = 2500; // potencia nominal del horno (para la escala del gráfico)
-
-// Gráficos (escalas fijas)
+// Gráficos con escalas fijas
 const deseadaChart      = createChart(ctxDeseada,      'Temperatura objetivo (°C)', 0, 300);
 const medicionChart     = createChart(ctxMedicion,     'Temperatura medida (°C)',   0, 300);
 const errorChart        = createChart(ctxError,        'Error (°C)',               -50, 300);
-const salidaChart       = createChart(ctxSalida,       'Potencia (W)',              0, maxPowerW);
+const salidaChart       = createChart(ctxSalida,       'Potencia deseada (%)',      0, 100);
 const perturbacionChart = createChart(ctxPerturbacion, 'Perturbación (0/1)',        0, 1.2);
 
-// Banda de error en el gráfico de temperatura medida
+// Banda de error ±5 °C alrededor del setpoint (en el gráfico de temperatura medida)
 const bandaError = 5;
 medicionChart.options.plugins.bandaError = {
   setpoint: 180,
@@ -124,12 +116,12 @@ let Kp = 1.0;
 let Ki = 0.2;
 let integralError = 0;
 
-// Física del horno (modelo simplificado) – lógica ORIGINAL
+// Física del horno (modelo simplificado)
 const maxHeatingRate = 25.0; // °C/min a 100% potencia
 const lossCoeff      = 0.10; // pérdidas térmicas
 
 // Simulación
-const SIM_INTERVAL_MS = 100;  // 100 ms entre pasos (~10 fps)
+const SIM_INTERVAL_MS = 100; // 100 ms entre pasos (~10 fps)
 let   simSpeedMinPerSec = 10; // minutos simulados por segundo
 let   DT_MIN = 0;             // minutos simulados por paso
 
@@ -167,7 +159,6 @@ function recalcularDT() {
   DT_MIN = simSpeedMinPerSec / stepsPerSecond; // min/paso
 }
 
-// Inicializar
 simSpeedMinPerSec = parseFloat(velocidadSimInput.value) || 10;
 recalcularDT();
 
@@ -256,7 +247,7 @@ function controlPI(error) {
   return salidaPct;
 }
 
-// ===================== MODELO TÉRMICO (misma lógica anterior) =====================
+// ===================== MODELO TÉRMICO =====================
 function modeloTermico(temp, potenciaPct) {
   const heating = (potenciaPct / 100) * maxHeatingRate * DT_MIN;
   const cooling = lossCoeff * (temp - ambient) * DT_MIN;
@@ -297,21 +288,17 @@ function resetSimulationData() {
   });
 }
 
-// un paso de simulación
 function stepSimulation() {
   tiempoMin += DT_MIN;
 
   const medicion = temperatura;
   const error = setpoint - medicion;
 
-  // salida de control en % (como antes)
+  // salida de control en % (potencia deseada)
   const salidaPct = controlPI(error);
 
-  // dinámica térmica con %
+  // dinámica térmica
   temperatura = modeloTermico(temperatura, salidaPct);
-
-  // potencia en W solo para el gráfico
-  const potenciaW = (salidaPct / 100) * maxPowerW;
 
   // Manejo perturbación
   if (puertaAbierta && pertRestanteMin > 0) {
@@ -332,7 +319,7 @@ function stepSimulation() {
     { chart: deseadaChart,      value: setpoint },
     { chart: medicionChart,     value: temperatura },
     { chart: errorChart,        value: error },
-    { chart: salidaChart,       value: potenciaW },
+    { chart: salidaChart,       value: salidaPct },
     { chart: perturbacionChart, value: pertSignal }
   ];
 

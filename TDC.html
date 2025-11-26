@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Simulación Horno Eléctrico</title>
+  <title>Simulación Horno Eléctrico (Control PI)</title>
   <link rel="stylesheet" href="TDC.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -11,14 +11,15 @@
 
   <div class="main-container">
 
-    <h2>Simulación Horno Eléctrico</h2>
+    <h2>Simulación Horno Eléctrico (Control PI)</h2>
 
     <!-- Panel de controles principales -->
     <div class="panel controls-layout">
 
-      <!-- IZQUIERDA -->
+      <!-- ==================== IZQUIERDA ==================== -->
       <div class="controls-left">
 
+        <!-- Slider de temperatura objetivo dentro del recuadro gris -->
         <div class="slider-container">
           <label for="slider">Temperatura objetivo (°C) (entre 50 y 250):</label><br>
           <input type="range" id="slider" min="50" max="250" step="5" value="180">
@@ -64,7 +65,7 @@
 
       </div>
 
-      <!-- DERECHA -->
+      <!-- ==================== DERECHA ==================== -->
       <div class="controls-right">
 
         <div class="row">
@@ -92,7 +93,7 @@
         <div class="chart-box big-chart">
           <h3>Temperatura Objetivo (°C)</h3>
           <canvas id="ChartDeseada"></canvas>
-        </div>        
+        </div>
 
         <div class="chart-box big-chart">
           <h3>Temperatura Medida (°C)</h3>
@@ -106,7 +107,7 @@
         </div>
 
         <div class="chart-box">
-          <h3>Potencia (W)</h3>
+          <h3>Potencia deseada (%)</h3>
           <canvas id="ChartSalida"></canvas>
         </div>
 
@@ -116,7 +117,8 @@
           <canvas id="ChartPerturbacion"></canvas>
         </div>
 
-        <!-- La celda de la derecha de la fila 3 queda vacía -->
+        <!-- La celda derecha de la fila 3 queda vacía -->
+
       </div>
     </div>
 

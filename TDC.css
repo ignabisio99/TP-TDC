@@ -127,7 +127,7 @@ h3 {
 
 /* Cada gráfico */
 .chart-box {
-  margin-bottom: 0; /* el gap de la grilla ya separa */
+  margin-bottom: 0; /* el gap ya separa */
 }
 
 canvas {
@@ -139,7 +139,7 @@ canvas {
   box-sizing: border-box;
 }
 
-/* Hacer más grande el gráfico de temperatura medida */
+/* Hacer más grande el gráfico de temperatura objetivo y medida */
 .big-chart canvas {
   height: 380px !important;
 }
