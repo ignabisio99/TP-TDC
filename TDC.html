@@ -7,122 +7,139 @@
   <link rel="stylesheet" href="TDC.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
 
-  <div class="main-container">
+  <!-- ========== HORNO COMPLETO ========== -->
+  <div class="oven-frame">
 
-    <h2>Simulación Horno Eléctrico (Control PI)</h2>
-
-    <!-- Panel de controles principales -->
-    <div class="panel controls-layout">
-
-      <!-- ==================== IZQUIERDA ==================== -->
-      <div class="controls-left">
-
-        <!-- Slider de temperatura objetivo dentro del recuadro gris -->
-        <div class="slider-container">
-          <label for="slider">Temperatura objetivo (°C) (entre 50 y 250):</label><br>
-          <input type="range" id="slider" min="50" max="250" step="5" value="180">
-          <span id="sliderValue">180</span> °C
-        </div>
-
-        <div class="row">
-          <label for="ambientInput">Temperatura ambiente (°C):</label>
-          <input type="number" id="ambientInput" step="1" value="20">
-        </div>
-
-        <div class="row">
-          <label for="KpInput">Kp:</label>
-          <input type="number" id="KpInput" step="0.1" value="1.0">
-        </div>
-
-        <div class="row">
-          <label for="KiInput">Ki:</label>
-          <input type="number" id="KiInput" step="0.05" value="0.2">
-        </div>
-
-        <div class="row">
-          <label for="duracionSim">Duración simulación (min):</label>
-          <input type="number" id="duracionSim" min="1" max="300" value="120">
-        </div>
-
-        <div class="row">
-          <label for="velocidadSim">Velocidad simulación (min/s):</label>
-          <input type="number" id="velocidadSim" min="1" max="10" value="10">
-        </div>
-
-        <div class="row">
-          <button id="btnStart" class="btn btn-primary">Iniciar nueva simulación</button>
-        </div>
-
-        <div class="row">
-          <button id="btnPause" class="btn">Pausar / Continuar</button>
-        </div>
-
-        <div class="row">
-          <button id="btnAbort" class="btn btn-danger">Abortar simulación</button>
-        </div>
-
-      </div>
-
-      <!-- ==================== DERECHA ==================== -->
-      <div class="controls-right">
-
-        <div class="row">
-          <label for="duracionPert">Duración perturbación (min):</label>
-          <input type="number" id="duracionPert" min="1" max="60" value="5">
-        </div>
-
-        <div class="row">
-          <button id="btnPert" class="btn">Iniciar perturbación</button>
-        </div>
-
-        <div class="row">
-          <span id="perturbacion" class="muted">Perturbación: inactiva</span>
-        </div>
-
-      </div>
-
+    <!-- Panel superior del horno -->
+    <div class="oven-top-panel">
+      <div class="oven-knob"></div>
+      <div class="oven-knob"></div>
+      <div class="oven-light"></div>
     </div>
 
-    <!-- Panel de gráficos -->
-    <div class="panel">
-      <div class="charts-grid">
+    <!-- Ventana del horno -->
+    <div class="oven-window">
+      <div class="oven-glass-overlay"></div>
 
-        <!-- Fila 1 -->
-        <div class="chart-box big-chart">
-          <h3>Temperatura Objetivo (°C)</h3>
-          <canvas id="ChartDeseada"></canvas>
-        </div>
+      <!-- Contenido adentro del horno -->
+      <div class="oven-content">
 
-        <div class="chart-box big-chart">
-          <h3>Temperatura Medida (°C)</h3>
-          <canvas id="ChartMedicion"></canvas>
-        </div>
+        <!-- TODO TU CONTENIDO ORIGINAL -->
+        <div class="main-container">
 
-        <!-- Fila 2 -->
-        <div class="chart-box">
-          <h3>Error (°C)</h3>
-          <canvas id="ChartError"></canvas>
-        </div>
+          <h2>Simulación Horno Eléctrico (Control PI)</h2>
 
-        <div class="chart-box">
-          <h3>Potencia deseada (%)</h3>
-          <canvas id="ChartSalida"></canvas>
-        </div>
+          <!-- Panel de controles principales -->
+          <div class="panel controls-layout">
 
-        <!-- Fila 3 -->
-        <div class="chart-box">
-          <h3>Perturbación (0/1)</h3>
-          <canvas id="ChartPerturbacion"></canvas>
-        </div>
+            <!-- ==================== IZQUIERDA ==================== -->
+            <div class="controls-left">
 
-        <!-- La celda derecha de la fila 3 queda vacía -->
+              <div class="slider-container">
+                <label for="slider">Temperatura objetivo (°C) (entre 50 y 250):</label><br>
+                <input type="range" id="slider" min="50" max="250" step="5" value="180">
+                <span id="sliderValue">180</span> °C
+              </div>
 
-      </div>
-    </div>
+              <div class="row">
+                <label for="ambientInput">Temperatura ambiente (°C):</label>
+                <input type="number" id="ambientInput" step="1" value="20">
+              </div>
 
-  </div>
+              <div class="row">
+                <label for="KpInput">Kp:</label>
+                <input type="number" id="KpInput" step="0.1" value="1.0">
+              </div>
+
+              <div class="row">
+                <label for="KiInput">Ki:</label>
+                <input type="number" id="KiInput" step="0.05" value="0.2">
+              </div>
+
+              <div class="row">
+                <label for="duracionSim">Duración simulación (min):</label>
+                <input type="number" id="duracionSim" min="1" max="300" value="120">
+              </div>
+
+              <div class="row">
+                <label for="velocidadSim">Velocidad simulación (min/s):</label>
+                <input type="number" id="velocidadSim" min="1" max="10" value="10">
+              </div>
+
+              <div class="row">
+                <button id="btnStart" class="btn btn-primary">Iniciar nueva simulación</button>
+              </div>
+
+              <div class="row">
+                <button id="btnPause" class="btn">Pausar / Continuar</button>
+              </div>
+
+              <div class="row">
+                <button id="btnAbort" class="btn btn-danger">Abortar simulación</button>
+              </div>
+
+            </div>
+
+            <!-- ==================== DERECHA ==================== -->
+            <div class="controls-right">
+
+              <div class="row">
+                <label for="duracionPert">Duración perturbación (min):</label>
+                <input type="number" id="duracionPert" min="1" max="60" value="5">
+              </div>
+
+              <div class="row">
+                <button id="btnPert" class="btn">Iniciar perturbación</button>
+              </div>
+
+              <div class="row">
+                <span id="perturbacion" class="muted">Perturbación: inactiva</span>
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- Panel de gráficos -->
+          <div class="panel">
+            <div class="charts-grid">
+
+              <div class="chart-box big-chart">
+                <h3>Temperatura Objetivo (°C)</h3>
+                <canvas id="ChartDeseada"></canvas>
+              </div>
+
+              <div class="chart-box big-chart">
+                <h3>Temperatura Medida (°C)</h3>
+                <canvas id="ChartMedicion"></canvas>
+              </div>
+
+              <div class="chart-box">
+                <h3>Error (°C)</h3>
+                <canvas id="ChartError"></canvas>
+              </div>
+
+              <div class="chart-box">
+                <h3>Potencia deseada (%)</h3>
+                <canvas id="ChartSalida"></canvas>
+              </div>
+
+              <div class="chart-box">
+                <h3>Perturbación (0/1)</h3>
+                <canvas id="ChartPerturbacion"></canvas>
+              </div>
+
+            </div>
+          </div>
+
+        </div> <!-- /main-container -->
+
+      </div><!-- /oven-content -->
+    </div><!-- /oven-window -->
+  </div><!-- /oven-frame -->
 
   <script src="TDC.js"></script>
 </body>

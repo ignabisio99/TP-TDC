@@ -299,6 +299,7 @@ function stepSimulation() {
 
   // dinámica térmica
   temperatura = modeloTermico(temperatura, salidaPct);
+  actualizarVidrio(temperatura);
 
   // Manejo perturbación
   if (puertaAbierta && pertRestanteMin > 0) {
@@ -346,6 +347,41 @@ function stepSimulation() {
     velocidadSimInput.disabled = false;
   }
 }
+
+function actualizarVidrio(tempActual) {
+  const ovenWindow = document.querySelector(".oven-window");
+
+  const tMin = 30;   // sin efecto por debajo de esta temperatura
+  const tMax = 240;  // rojo máximo
+
+  // Normalizamos entre 0 y 1
+  let factor = (tempActual - tMin) / (tMax - tMin);
+  factor = Math.min(1, Math.max(0, factor)); // clamp
+
+  // Si la temperatura es baja, quitar modo "hot"
+  if (factor <= 0.05) {
+    ovenWindow.style.boxShadow = "";
+    ovenWindow.style.background = "#111";
+    ovenWindow.classList.remove("hot");
+    return;
+  }
+
+  // Aplicar el efecto dinámico mezclando tonos
+  const intensidad = factor;
+
+  // Color cálido
+  const rojo = Math.round(200 + 55 * intensidad);
+  const naranja = Math.round(40 + 100 * intensidad);
+
+  ovenWindow.style.background = `rgba(${rojo}, ${naranja}, 0, ${0.12 + intensidad * 0.35})`;
+
+  ovenWindow.style.boxShadow =
+    `inset 0 0 ${40 + 30 * intensidad}px rgba(255,80,0,${0.4 + intensidad * 0.4}),
+     inset 0 0 ${120 + 80 * intensidad}px rgba(255,100,0,${0.3 + intensidad * 0.4})`;
+
+  ovenWindow.classList.add("hot");
+}
+
 
 // ===================== BOTONES =====================
 
