@@ -1,4 +1,7 @@
-// TDC.js - Simulación horno eléctrico (Control PI, potencia deseada en %)
+// =====================================================
+//   TDC.js - Simulación horno eléctrico (Control PI)
+// =====================================================
+
 
 // ===================== CHARTS =====================
 const ctxDeseada      = document.getElementById('ChartDeseada').getContext('2d');
@@ -7,7 +10,7 @@ const ctxError        = document.getElementById('ChartError').getContext('2d');
 const ctxSalida       = document.getElementById('ChartSalida').getContext('2d');
 const ctxPerturbacion = document.getElementById('ChartPerturbacion').getContext('2d');
 
-// Plugin para banda de error (verde) en la temperatura medida
+// Plugin para banda de error (verde)
 const bandaErrorPlugin = {
   id: 'bandaError',
   beforeDraw(chart, args, options) {
@@ -25,264 +28,135 @@ const bandaErrorPlugin = {
     ctx.restore();
   }
 };
-
 Chart.register(bandaErrorPlugin);
 
 function createChart(ctx, labelY, yMin, yMax) {
   return new Chart(ctx, {
     type: 'line',
-    data: {
-      labels: [],
-      datasets: [{
-        label: labelY,
-        borderColor: 'rgba(0,123,255,1)',
-        backgroundColor: 'rgba(0,123,255,0.15)',
-        data: [],
-        fill: false,
-        tension: 0.25,
-        pointRadius: 0,
-        pointHoverRadius: 0
-      }]
-    },
+    data: { labels: [], datasets: [{
+      label: labelY,
+      borderColor: 'rgba(0,123,255,1)',
+      backgroundColor: 'rgba(0,123,255,0.15)',
+      data: [],
+      fill: false,
+      tension: 0.25,
+      pointRadius: 0,
+      pointHoverRadius: 0
+    }]},
     options: {
       animation: false,
       responsive: true,
-      interaction: {
-        mode: 'nearest',
-        intersect: false
-      },
-      elements: {
-        point: {
-          radius: 0
-        }
-      },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          enabled: true,
-          callbacks: {
-            title(items) {
-              if (!items.length) return '';
-              const x = items[0].parsed.x;
-              return `Tiempo: ${x.toFixed(1)} min`;
-            },
-            label(context) {
-              const label = context.dataset.label || '';
-              const y = context.parsed.y;
-              return `${label}: ${y.toFixed(2)}`;
-            }
-          }
-        }
-      },
       scales: {
-        x: {
-          type: 'linear',
-          title: { display: true, text: 'Tiempo (min)' },
-          min: 0,
-          max: 120
-        },
-        y: {
-          title: { display: true, text: labelY },
-          min: yMin,
-          max: yMax
-        }
-      }
+        x: { type: 'linear', min: 0, max: 120 },
+        y: { min: yMin, max: yMax }
+      },
+      plugins: { legend: { display: false } }
     }
   });
 }
 
-// Gráficos con escalas fijas
-const deseadaChart      = createChart(ctxDeseada,      'Temperatura objetivo (°C)', 0, 300);
-const medicionChart     = createChart(ctxMedicion,     'Temperatura medida (°C)',   0, 300);
-const errorChart        = createChart(ctxError,        'Error (°C)',               -50, 300);
-const salidaChart       = createChart(ctxSalida,       'Potencia deseada (%)',      0, 100);
-const perturbacionChart = createChart(ctxPerturbacion, 'Perturbación (0/1)',        0, 1.2);
+const deseadaChart      = createChart(ctxDeseada,      'Temp. objetivo (°C)', 0, 300);
+const medicionChart     = createChart(ctxMedicion,     'Temp. medida (°C)',   0, 300);
+const errorChart        = createChart(ctxError,        'Error (°C)',         -50, 300);
+const salidaChart       = createChart(ctxSalida,       'Potencia (%)',         0, 100);
+const perturbacionChart = createChart(ctxPerturbacion, 'Perturbación',         0, 1.2);
 
-// Banda de error ±5 °C alrededor del setpoint (en el gráfico de temperatura medida)
 const bandaError = 5;
-medicionChart.options.plugins.bandaError = {
-  setpoint: 180,
-  bandaError: bandaError
-};
+medicionChart.options.plugins.bandaError = { setpoint: 180, bandaError };
 
-// ===================== PARÁMETROS DEL SISTEMA =====================
-let setpoint    = 180;  // °C
-let ambient     = 20;   // °C ambiente
+
+// ===================== PARÁMETROS =====================
+let setpoint    = 180;
+let ambient     = 20;
 let temperatura = ambient;
-let tiempoMin   = 0;    // tiempo simulado en minutos
+let tiempoMin   = 0;
 
-// Control PI
 let Kp = 1.0;
 let Ki = 0.2;
 let integralError = 0;
 
-// Física del horno (modelo simplificado)
-const maxHeatingRate = 25.0; // °C/min a 100% potencia
-const lossCoeff      = 0.10; // pérdidas térmicas
+const maxHeatingRate = 25;
+const lossCoeff      = 0.10;
 
-// Simulación
-const SIM_INTERVAL_MS = 100; // 100 ms entre pasos (~10 fps)
-let   simSpeedMinPerSec = 10; // minutos simulados por segundo
-let   DT_MIN = 0;             // minutos simulados por paso
-
-let simDurationMin = 120;     // duración total de la simulación en minutos
-
-// Perturbación (puerta abierta)
-const doorInitialDrop = 8.0;  // caída instantánea de temperatura
-const doorLossPerMin  = 6.0;  // pérdida extra por minuto
+const SIM_INTERVAL_MS = 100;
+let simSpeedMinPerSec = 10;
+let DT_MIN = 0;
+let simDurationMin = 120;
 
 let puertaAbierta = false;
 let caidaInicialAplicada = false;
 let pertRestanteMin = 0;
 
+
 // ===================== DOM =====================
 const slider      = document.getElementById('slider');
 const sliderValue = document.getElementById('sliderValue');
 
-const ambientInput      = document.getElementById('ambientInput');
-const KpInput           = document.getElementById('KpInput');
-const KiInput           = document.getElementById('KiInput');
-const duracionSimInput  = document.getElementById('duracionSim');
-const velocidadSimInput = document.getElementById('velocidadSim');
-const duracionPertInput = document.getElementById('duracionPert');
+const ambientInput = document.getElementById('ambientKnob');
+const KpInput      = document.getElementById('KpKnob');
+const KiInput      = document.getElementById('KiKnob');
 
 const btnPert         = document.getElementById('btnPert');
-const perturbacionTxt = document.getElementById('perturbacion');
+const perturbacionTxt = document.getElementById('perturb-status');
 
 const btnStart = document.getElementById('btnStart');
 const btnPause = document.getElementById('btnPause');
 const btnAbort = document.getElementById('btnAbort');
 
+
 // ===================== VELOCIDAD =====================
 function recalcularDT() {
   const stepsPerSecond = 1000 / SIM_INTERVAL_MS;
-  DT_MIN = simSpeedMinPerSec / stepsPerSecond; // min/paso
+  DT_MIN = simSpeedMinPerSec / stepsPerSecond;
 }
-
-simSpeedMinPerSec = parseFloat(velocidadSimInput.value) || 10;
 recalcularDT();
 
-// ===================== EVENTOS UI =====================
 
-// Slider temperatura objetivo
-slider.addEventListener("input", () => {
-  setpoint = parseInt(slider.value, 10);
-  sliderValue.textContent = setpoint;
-  integralError = 0;
-  medicionChart.options.plugins.bandaError.setpoint = setpoint;
-});
-
-// Temperatura ambiente
-ambientInput.addEventListener("change", () => {
-  ambient = Number(ambientInput.value);
-});
-
-// Kp, Ki
-KpInput.addEventListener('change', () => {
-  const v = parseFloat(KpInput.value);
-  if (!isNaN(v)) Kp = v;
-});
-
-KiInput.addEventListener('change', () => {
-  const v = parseFloat(KiInput.value);
-  if (!isNaN(v) && v > 0) Ki = v;
-});
-
-// Duración simulación
-duracionSimInput.addEventListener('change', () => {
-  const v = parseInt(duracionSimInput.value, 10);
-  if (!isNaN(v) && v > 0) {
-    simDurationMin = v;
-    [deseadaChart, medicionChart, errorChart, salidaChart, perturbacionChart].forEach(ch => {
-      ch.options.scales.x.min = 0;
-      ch.options.scales.x.max = simDurationMin;
-      ch.update();
-    });
-  }
-});
-
-// Velocidad (1 a 10 min/s)
-velocidadSimInput.addEventListener("change", () => {
-  let v = parseFloat(velocidadSimInput.value);
-  if (isNaN(v) || v < 1) v = 1;
-  if (v > 10) v = 10;
-  simSpeedMinPerSec = v;
-  velocidadSimInput.value = v;
-  recalcularDT();
-});
-
-// Botón perturbación
-btnPert.addEventListener('click', () => {
-  if (puertaAbierta) return;
-
-  const dur = parseInt(duracionPertInput.value, 10);
-  if (isNaN(dur) || dur <= 0) return;
-
-  puertaAbierta = true;
-  caidaInicialAplicada = false;
-  pertRestanteMin = dur;
-
-  perturbacionTxt.textContent = `Perturbación: en curso (${dur} min)`;
-  btnPert.disabled = true;
-});
-
-// ===================== CONTROL PI (0–100 %) =====================
+// ===================== CONTROL PI =====================
 function controlPI(error) {
-  const p = Kp * error;
-
-  // integral con dt
   integralError += error * DT_MIN;
+  const maxInt = 100 / Math.max(Ki, 0.001);
 
-  // anti-windup simple para 0–100 %
-  const maxIntegral = 100 / Math.max(Ki, 0.0001);
-  if (integralError >  maxIntegral) integralError =  maxIntegral;
-  if (integralError < -maxIntegral) integralError = -maxIntegral;
+  if (integralError >  maxInt) integralError =  maxInt;
+  if (integralError < -maxInt) integralError = -maxInt;
 
-  const i = Ki * integralError;
-
-  let salidaPct = p + i;  // %
-  if (salidaPct < 0)   salidaPct = 0;
-  if (salidaPct > 100) salidaPct = 100;
-
-  return salidaPct;
+  let salidaPct = Kp * error + Ki * integralError;
+  return Math.min(100, Math.max(0, salidaPct));
 }
 
-// ===================== MODELO TÉRMICO =====================
+
+// ===================== MODELO =====================
 function modeloTermico(temp, potenciaPct) {
   const heating = (potenciaPct / 100) * maxHeatingRate * DT_MIN;
   const cooling = lossCoeff * (temp - ambient) * DT_MIN;
 
-  let doorLossExtra = 0;
+  let doorLoss = 0;
   if (puertaAbierta) {
-    if (!caidaInicialAplicada) {
-      temp -= doorInitialDrop;
-      caidaInicialAplicada = true;
-    }
-    doorLossExtra = doorLossPerMin * DT_MIN;
+    if (!caidaInicialAplicada) { temp -= 8; caidaInicialAplicada = true; }
+    doorLoss = 6 * DT_MIN;
   }
 
-  return temp + heating - cooling - doorLossExtra;
+  return temp + heating - cooling - doorLoss;
 }
+
 
 // ===================== SIMULACIÓN =====================
 let simIntervalId = null;
 
 function resetSimulationData() {
   tiempoMin = 0;
-  ambient = Number(ambientInput.value);
   temperatura = ambient;
   integralError = 0;
 
   puertaAbierta = false;
   caidaInicialAplicada = false;
   pertRestanteMin = 0;
-  perturbacionTxt.textContent = "Perturbación: inactiva";
-  btnPert.disabled = false;
+
+  perturbacionTxt.textContent = "Inactiva";
 
   [deseadaChart, medicionChart, errorChart, salidaChart, perturbacionChart].forEach(ch => {
     ch.data.labels = [];
     ch.data.datasets[0].data = [];
-    ch.options.scales.x.min = 0;
     ch.options.scales.x.max = simDurationMin;
     ch.update();
   });
@@ -293,142 +167,125 @@ function stepSimulation() {
 
   const medicion = temperatura;
   const error = setpoint - medicion;
-
-  // salida de control en % (potencia deseada)
   const salidaPct = controlPI(error);
-
-  // dinámica térmica
   temperatura = modeloTermico(temperatura, salidaPct);
-  actualizarVidrio(temperatura);
 
-  // Manejo perturbación
-  if (puertaAbierta && pertRestanteMin > 0) {
+  if (puertaAbierta) {
     pertRestanteMin -= DT_MIN;
     if (pertRestanteMin <= 0) {
       puertaAbierta = false;
-      perturbacionTxt.textContent = "Perturbación: finalizada";
-      btnPert.disabled = false;
+      perturbacionTxt.textContent = "Inactiva";
     } else {
-      const mostrada = Math.max(0, Math.ceil(pertRestanteMin));
-      perturbacionTxt.textContent = `Perturbación: en curso (${mostrada} min)`;
+      perturbacionTxt.textContent = `Activa (${Math.ceil(pertRestanteMin)} min)`;
     }
   }
-  const pertSignal = puertaAbierta ? 1 : 0;
 
-  // Actualizar gráficos
-  const charts = [
+  const chartValues = [
     { chart: deseadaChart,      value: setpoint },
     { chart: medicionChart,     value: temperatura },
     { chart: errorChart,        value: error },
     { chart: salidaChart,       value: salidaPct },
-    { chart: perturbacionChart, value: pertSignal }
+    { chart: perturbacionChart, value: puertaAbierta ? 1 : 0 }
   ];
 
-  charts.forEach(({ chart, value }) => {
+  chartValues.forEach(({ chart, value }) => {
     chart.data.labels.push(tiempoMin);
     chart.data.datasets[0].data.push(value);
-    if (chart.data.labels.length > 600) {
-      chart.data.labels.shift();
-      chart.data.datasets[0].data.shift();
-    }
     chart.update();
   });
 
-  // Fin automático por duración
   if (tiempoMin >= simDurationMin) {
     clearInterval(simIntervalId);
     simIntervalId = null;
-
-    slider.disabled            = false;
-    ambientInput.disabled      = false;
-    KpInput.disabled           = false;
-    KiInput.disabled           = false;
-    duracionSimInput.disabled  = false;
-    velocidadSimInput.disabled = false;
   }
-}
-
-function actualizarVidrio(tempActual) {
-  const ovenWindow = document.querySelector(".oven-window");
-
-  const tMin = 30;   // sin efecto por debajo de esta temperatura
-  const tMax = 240;  // rojo máximo
-
-  // Normalizamos entre 0 y 1
-  let factor = (tempActual - tMin) / (tMax - tMin);
-  factor = Math.min(1, Math.max(0, factor)); // clamp
-
-  // Si la temperatura es baja, quitar modo "hot"
-  if (factor <= 0.05) {
-    ovenWindow.style.boxShadow = "";
-    ovenWindow.style.background = "#111";
-    ovenWindow.classList.remove("hot");
-    return;
-  }
-
-  // Aplicar el efecto dinámico mezclando tonos
-  const intensidad = factor;
-
-  // Color cálido
-  const rojo = Math.round(200 + 55 * intensidad);
-  const naranja = Math.round(40 + 100 * intensidad);
-
-  ovenWindow.style.background = `rgba(${rojo}, ${naranja}, 0, ${0.12 + intensidad * 0.35})`;
-
-  ovenWindow.style.boxShadow =
-    `inset 0 0 ${40 + 30 * intensidad}px rgba(255,80,0,${0.4 + intensidad * 0.4}),
-     inset 0 0 ${120 + 80 * intensidad}px rgba(255,100,0,${0.3 + intensidad * 0.4})`;
-
-  ovenWindow.classList.add("hot");
 }
 
 
 // ===================== BOTONES =====================
-
-// Iniciar nueva simulación
 btnStart.addEventListener('click', () => {
-  if (simIntervalId !== null) {
-    clearInterval(simIntervalId);
-    simIntervalId = null;
-  }
-
+  if (simIntervalId) clearInterval(simIntervalId);
   resetSimulationData();
-
-  // deshabilitar variables de control mientras corre la simulación
-  slider.disabled           = true;
-  ambientInput.disabled     = true;
-  KpInput.disabled          = true;
-  KiInput.disabled          = true;
-  duracionSimInput.disabled = true;
-  velocidadSimInput.disabled= true;
-  // perturbación queda habilitada
-
   simIntervalId = setInterval(stepSimulation, SIM_INTERVAL_MS);
 });
-
-// Pausar / continuar
 btnPause.addEventListener('click', () => {
-  if (simIntervalId !== null) {
-    clearInterval(simIntervalId);
-    simIntervalId = null;
-  } else {
-    simIntervalId = setInterval(stepSimulation, SIM_INTERVAL_MS);
-  }
+  if (simIntervalId) { clearInterval(simIntervalId); simIntervalId = null; }
+  else simIntervalId = setInterval(stepSimulation, SIM_INTERVAL_MS);
+});
+btnAbort.addEventListener('click', () => {
+  if (simIntervalId) clearInterval(simIntervalId);
+  simIntervalId = null;
+  resetSimulationData();
+});
+btnPert.addEventListener('click', () => {
+  if (puertaAbierta) return;
+  puertaAbierta = true;
+  pertRestanteMin = Number(document.getElementById("pertDurationKnob").value);
+  perturbacionTxt.textContent = `Activa (${pertRestanteMin} min)`;
 });
 
-// Abortar simulación
-btnAbort.addEventListener('click', () => {
-  if (simIntervalId !== null) {
-    clearInterval(simIntervalId);
-    simIntervalId = null;
+
+// ===================== PERILLAS CON BARRAS =====================
+function conectarPerillaConBarra(knobId, displayId, visualId, barId, callback) {
+  const knob = document.getElementById(knobId);
+  const bar  = document.getElementById(barId);
+  const disp = document.getElementById(displayId);
+  const visual = document.getElementById(visualId);
+
+  const min = parseFloat(knob.min);
+  const max = parseFloat(knob.max);
+
+  function actualizar(v) {
+    disp.textContent = v;
+    const ang = -135 + ((v - min) / (max - min)) * 270;
+    visual.style.transform = `rotate(${ang}deg)`;
+    if (callback) callback(parseFloat(v));
   }
 
-  slider.disabled            = false;
-  ambientInput.disabled      = false;
-  KpInput.disabled           = false;
-  KiInput.disabled           = false;
-  duracionSimInput.disabled  = false;
-  velocidadSimInput.disabled = false;
+  bar.addEventListener("input", () => { knob.value = bar.value; actualizar(bar.value); });
+  knob.addEventListener("input", () => { bar.value = knob.value; actualizar(knob.value); });
 
-  resetSimulationData();
+  actualizar(knob.value);
+}
+
+// Temp objetivo
+conectarPerillaConBarra("slider", "sliderValue", "sliderVisual", "sliderBar", v => {
+  setpoint = v;
+  medicionChart.options.plugins.bandaError.setpoint = v;
+  medicionChart.update();
+});
+
+// Ambiente
+conectarPerillaConBarra("ambientKnob", "ambientDisplay", "ambientVisual", "ambientBar", v => {
+  ambient = v;
+});
+
+// Kp
+conectarPerillaConBarra("KpKnob", "KpDisplay", "KpVisual", "KpBar", v => {
+  Kp = v;
+});
+
+// Ki
+conectarPerillaConBarra("KiKnob", "KiDisplay", "KiVisual", "KiBar", v => {
+  Ki = v;
+});
+
+// Duración simulación
+conectarPerillaConBarra("simDurationKnob", "sim-duration", "simDurationVisual", "simDurationBar", v => {
+  simDurationMin = v;
+});
+
+// Velocidad simulación
+conectarPerillaConBarra("simSpeedKnob", "sim-speed", "simSpeedVisual", "simSpeedBar", v => {
+  simSpeedMinPerSec = v;
+  recalcularDT();
+});
+
+// Duración perturbación
+conectarPerillaConBarra("pertDurationKnob", "perturb-duration", "pertDurationVisual", "pertDurationBar", v => {
+  pertRestanteMin = v;
+});
+
+// Estado perturbación (visual)
+conectarPerillaConBarra("pertStatusKnob", "perturb-status", "pertStatusVisual", "pertStatusBar", v => {
+  perturbacionTxt.textContent = v == 0 ? "Inactiva" : "Activa";
 });

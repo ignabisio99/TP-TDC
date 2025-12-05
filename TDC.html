@@ -24,86 +24,128 @@
     <div class="oven-window">
       <div class="oven-glass-overlay"></div>
 
-      <!-- Contenido adentro del horno -->
       <div class="oven-content">
 
-        <!-- TODO TU CONTENIDO ORIGINAL -->
         <div class="main-container">
 
           <h2>Simulación Horno Eléctrico (Control PI)</h2>
 
-          <!-- Panel de controles principales -->
-          <div class="panel controls-layout">
+          <!-- ==========================================================
+               PANEL PRINCIPAL – PERILLAS GRANDES HORIZONTALES
+          ========================================================== -->
+          <div class="panel">
+            <div class="knob-row">
 
-            <!-- ==================== IZQUIERDA ==================== -->
-            <div class="controls-left">
-
-              <div class="slider-container">
-                <label for="slider">Temperatura objetivo (°C) (entre 50 y 250):</label><br>
-                <input type="range" id="slider" min="50" max="250" step="5" value="180">
-                <span id="sliderValue">180</span> °C
+              <!-- Temp. Objetivo -->
+              <div class="knob-block">
+                <label>Temp. Objetivo</label>
+                <div class="knob-wrapper">
+                  <div class="knob-visual" id="sliderVisual"></div>
+                  <input type="range" id="slider" class="knob-input" min="50" max="300" value="180" step="1" data-display="sliderValue">
+                </div>
+                <input type="range" id="sliderBar" class="knob-bar" min="50" max="300" value="180" step="1">
+                <div class="knob-display digital-display" id="sliderValue">180 °C</div>
               </div>
 
-              <div class="row">
-                <label for="ambientInput">Temperatura ambiente (°C):</label>
-                <input type="number" id="ambientInput" step="1" value="20">
+              <!-- Temp. Ambiente -->
+              <div class="knob-block">
+                <label>Temp. Ambiente</label>
+                <div class="knob-wrapper">
+                  <div class="knob-visual" id="ambientVisual"></div>
+                  <input type="range" id="ambientKnob" class="knob-input" min="0" max="40" value="20" step="1" data-display="ambientDisplay">
+                </div>
+                <input type="range" id="ambientBar" class="knob-bar" min="0" max="40" value="20" step="1">
+                <div class="knob-display digital-display" id="ambientDisplay">20 °C</div>
               </div>
 
-              <div class="row">
-                <label for="KpInput">Kp:</label>
-                <input type="number" id="KpInput" step="0.1" value="1.0">
+              <!-- Kp -->
+              <div class="knob-block">
+                <label>Kp</label>
+                <div class="knob-wrapper">
+                  <div class="knob-visual" id="KpVisual"></div>
+                  <input type="range" id="KpKnob" class="knob-input" min="0" max="2" value="1" step="0.1" data-display="KpDisplay">
+                </div>
+                <input type="range" id="KpBar" class="knob-bar" min="0" max="2" value="1" step="0.1">
+                <div class="knob-display digital-display" id="KpDisplay">1.0</div>
               </div>
 
-              <div class="row">
-                <label for="KiInput">Ki:</label>
-                <input type="number" id="KiInput" step="0.05" value="0.2">
+              <!-- Ki -->
+              <div class="knob-block">
+                <label>Ki</label>
+                <div class="knob-wrapper">
+                  <div class="knob-visual" id="KiVisual"></div>
+                  <input type="range" id="KiKnob" class="knob-input" min="0" max="2" value="0.2" step="0.05" data-display="KiDisplay">
+                </div>
+                <input type="range" id="KiBar" class="knob-bar" min="0" max="2" value="0.2" step="0.05">
+                <div class="knob-display digital-display" id="KiDisplay">0.2</div>
               </div>
 
-              <div class="row">
-                <label for="duracionSim">Duración simulación (min):</label>
-                <input type="number" id="duracionSim" min="1" max="300" value="120">
+              <!-- Duración simulación -->
+              <div class="knob-block">
+                <label>Duración simulación (min)</label>
+                <div class="knob-wrapper">
+                  <div class="knob-visual" id="simDurationVisual"></div>
+                  <input type="range" id="simDurationKnob" class="knob-input" min="1" max="180" value="60" step="1"
+                        data-display="sim-duration">
+                </div>
+                <input type="range" id="simDurationBar" class="knob-bar" min="1" max="180" value="60" step="1">
+                <div class="knob-display digital-display" id="sim-duration">120</div>
               </div>
 
-              <div class="row">
-                <label for="velocidadSim">Velocidad simulación (min/s):</label>
-                <input type="number" id="velocidadSim" min="1" max="10" value="10">
+
+              <!-- Velocidad simulación -->
+              <div class="knob-block">
+                <label>Velocidad simulación (min/s)</label>
+                <div class="knob-wrapper">
+                  <div class="knob-visual" id="simSpeedVisual"></div>
+                  <input type="range" id="simSpeedKnob" class="knob-input" min="1" max="5" value="2" step="1"
+                        data-display="sim-speed">
+                </div>
+                <input type="range" id="simSpeedBar" class="knob-bar" min="1" max="5" value="2" step="1">
+                <div class="knob-display digital-display" id="sim-speed">10</div>
               </div>
 
-              <div class="row">
-                <button id="btnStart" class="btn btn-primary">Iniciar nueva simulación</button>
+
+              <!-- Duración perturbación -->
+              <div class="knob-block">
+                <label>Duración perturbación (min)</label>
+                <div class="knob-wrapper">
+                  <div class="knob-visual" id="pertDurationVisual"></div>
+                  <input type="range" id="pertDurationKnob" class="knob-input" min="1" max="3" value="1" step="1"
+                        data-display="perturb-duration">
+                </div>
+                <input type="range" id="pertDurationBar" class="knob-bar" min="1" max="3" value="1" step="1">
+                <div class="knob-display digital-display" id="perturb-duration">5</div>
               </div>
 
-              <div class="row">
-                <button id="btnPause" class="btn">Pausar / Continuar</button>
+
+              <!-- Perturbación (on/off) -->
+              <div class="knob-block">
+                <label>Perturbación</label>
+                <div class="knob-wrapper">
+                  <div class="knob-visual" id="pertStatusVisual"></div>
+                  <input type="range" id="pertStatusKnob" class="knob-input" min="0" max="1" value="0" step="1"
+                        data-display="perturb-status">
+                </div>
+                <input type="range" id="pertStatusBar" class="knob-bar" min="0" max="1" value="0" step="1">
+                <div class="knob-display digital-display" id="perturb-status">Inactiva</div>
               </div>
 
-              <div class="row">
-                <button id="btnAbort" class="btn btn-danger">Abortar simulación</button>
+
+
+              <!-- Botones tipo horno -->
+              <div class="knob-buttons">
+                <button id="btnStart" class="oven-btn oven-btn-green">Iniciar</button>
+                <button id="btnPause" class="oven-btn oven-btn-yellow">Pausar</button>
+                <button id="btnAbort" class="oven-btn oven-btn-red">Abortar</button>
+                <button id="btnPert" class="oven-btn oven-btn-blue">Perturbación</button>
               </div>
 
-            </div>
+            </div> <!-- /knob-row -->
 
-            <!-- ==================== DERECHA ==================== -->
-            <div class="controls-right">
+          </div> <!-- /panel -->
 
-              <div class="row">
-                <label for="duracionPert">Duración perturbación (min):</label>
-                <input type="number" id="duracionPert" min="1" max="60" value="5">
-              </div>
-
-              <div class="row">
-                <button id="btnPert" class="btn">Iniciar perturbación</button>
-              </div>
-
-              <div class="row">
-                <span id="perturbacion" class="muted">Perturbación: inactiva</span>
-              </div>
-
-            </div>
-
-          </div>
-
-          <!-- Panel de gráficos -->
+          <!-- GRÁFICOS -->
           <div class="panel">
             <div class="charts-grid">
 
