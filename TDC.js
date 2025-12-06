@@ -141,6 +141,24 @@ const bandaError = 5;
 medicionChart.options.plugins.bandaError = { setpoint: 180, bandaError };
 medicionChart.options.plugins.valorFinalPlugin = { color: "red" };
 
+function actualizarColorVidrio(temp) {
+  const vidrio = document.querySelector(".oven-glass-overlay");
+  if (!vidrio) return;
+
+  const t = Math.min(Math.max(temp, 0), 300);
+  const f = t / 300;
+
+  const r = Math.floor(255 * f);
+  const g = Math.floor(60 * (1 - f));
+  const b = Math.floor(20 * (1 - f));
+
+  const alpha = 0.60 + f * 0.25;
+
+  vidrio.style.backgroundColor = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+
+
 
 // =====================================================
 // MANEJO DE LA PERILLA CON BARRA DE VALORES
@@ -311,6 +329,8 @@ function stepSimulation() {
   const error = setpoint - medicion;
   const salidaPct = controlPI(error);
   temperatura = modeloTermico(temperatura, salidaPct);
+
+  actualizarColorVidrio(temperatura);
 
   if (puertaAbierta) {
     pertRestanteMin -= DT_MIN;
